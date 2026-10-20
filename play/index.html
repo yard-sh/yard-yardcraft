@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#1e2a36" />
+    <title>Yardcraft</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/hud.css" />
+    <link rel="stylesheet" href="css/menu.css" />
+    <link rel="stylesheet" href="css/inventory.css" />
+    <link rel="stylesheet" href="css/touch.css" />
+    <script type="importmap">
+      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    </script>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <div id="crosshair"></div>
+
+    <div id="status">Connecting…</div>
+    <div id="debug" hidden></div>
+    <ul id="players"></ul>
+
+    <div id="chat">
+      <div id="log"></div>
+      <!-- A form, so phone keyboards' Send/Go key submits it. -->
+      <form id="say-form">
+        <input id="say" maxlength="200" autocomplete="off" enterkeyhint="send" placeholder="Say something or type /help · Enter to send · Esc to cancel" />
+      </form>
+    </div>
+
+    <div id="hurt"></div>
+    <div id="hearts"></div>
+    <div id="hotbar"></div>
+
+    <!-- Touch controls, shown while playing on a touch screen -->
+    <div id="touch" hidden>
+      <div id="stick-zone"><div id="stick"><div id="knob"></div></div></div>
+      <div class="tb-top">
+        <button data-t="inv" aria-label="Inventory">Inv</button>
+        <button data-t="chat" aria-label="Chat">Chat</button>
+        <button data-t="view" aria-label="Change view">View</button>
+        <button data-t="pause" aria-label="Menu">❚❚</button>
+      </div>
+      <div class="tb-act">
+        <button data-t="sprint" aria-label="Sprint">Sprint</button>
+        <button data-t="sneak" aria-label="Sneak">Sneak</button>
+        <button data-t="place" aria-label="Place block">Place</button>
+        <button data-t="drop" aria-label="Drop one item">Drop</button>
+        <button data-t="jump" class="big" aria-label="Jump (double-tap to fly)">Jump</button>
+        <button data-t="break" class="big" aria-label="Break or hit">Break</button>
+      </div>
+    </div>
+
+    <!-- Inventory (E): the panel, and the stack following the pointer -->
+    <div id="inventory" hidden>
+      <div class="inv-panel">
+        <h2 id="inv-title">Inventory</h2>
+        <div class="inv-grid" id="inv-palette"></div>
+        <div class="inv-grid" id="inv-main"></div>
+        <div class="inv-grid inv-hotbar" id="inv-hotbar"></div>
+        <p class="inv-hint" id="inv-hint"></p>
+        <button class="mc" id="inv-done">Done</button>
+      </div>
+      <div class="slot" id="inv-cursor" hidden><span class="count"></span></div>
+    </div>
+
+    <div id="death" hidden>
+      <h1>You died!</h1>
+      <p id="death-msg"></p>
+      <div class="buttons">
+        <button class="mc" id="respawn">Respawn</button>
+        <button class="mc" id="death-title">Title screen</button>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <!-- Title and pause menu -->
+      <section class="screen" data-screen="main">
+        <h1 class="logo">YARDCRAFT</h1>
+        <p class="sub" id="menu-sub">A huge shared voxel world. Everyone here builds the same one.</p>
+        <div class="buttons">
+          <button class="mc primary" id="play" disabled>Connecting…</button>
+          <button class="mc" data-go="character">Character</button>
+          <div class="pair">
+            <button class="mc" data-go="options">Options</button>
+            <button class="mc" data-go="controls">Controls</button>
+          </div>
+        </div>
+        <p class="foot" id="menu-foot"></p>
+        <p class="foot" id="menu-guest" hidden>Playing as a guest · <a href="__yard/auth/login?return=/">Sign in</a> to keep your character everywhere</p>
+      </section>
+
+      <!-- Character: name, skin, arm model, with a live preview -->
+      <section class="screen wide" data-screen="character" hidden>
+        <h2>Character</h2>
+        <div class="char">
+          <div class="preview">
+            <canvas id="char-view"></canvas>
+            <p class="hint">Drag to turn</p>
+          </div>
+          <div class="char-form">
+            <label class="field">
+              <span>Name</span>
+              <input id="char-name" maxlength="16" autocomplete="off" spellcheck="false" />
+            </label>
+            <div class="field">
+              <span>Arms</span>
+              <div class="seg" id="char-model">
+                <button class="mc" data-model="classic">Classic</button>
+                <button class="mc" data-model="slim">Slim</button>
+              </div>
+            </div>
+            <div class="field">
+              <span>Skin</span>
+              <div class="skins" id="skin-grid"></div>
+            </div>
+            <div class="pair">
+              <button class="mc" id="skin-upload">Upload skin…</button>
+              <button class="mc" id="skin-download">Download</button>
+            </div>
+            <input type="file" id="skin-file" accept="image/png" hidden />
+            <p class="note" id="char-msg">Upload any Minecraft skin (64×64 or 64×32 PNG).</p>
+          </div>
+        </div>
+        <div class="pair">
+          <button class="mc" data-go="main">Cancel</button>
+          <button class="mc primary" id="char-save">Save</button>
+        </div>
+      </section>
+
+      <!-- Options, remembered in this browser -->
+      <section class="screen" data-screen="options" hidden>
+        <h2>Options</h2>
+        <!-- Filled in from the table in js/ui/options.js -->
+        <div class="opts" id="opts"></div>
+        <button class="mc" data-go="main">Done</button>
+      </section>
+
+      <section class="screen" data-screen="controls" hidden>
+        <h2>Controls</h2>
+        <dl class="touch-only">
+          <dt>Left side</dt><dd>drag to move</dd>
+          <dt>Right side</dt><dd>drag to look</dd>
+          <dt>Jump</dt><dd>jump; in creative double-tap to fly (hold to rise)</dd>
+          <dt>Sneak</dt><dd>sneak on/off; hold to sink while flying</dd>
+          <dt>Sprint</dt><dd>sprint while moving forward</dd>
+          <dt>Break</dt><dd>hold to break; tap a player or mob to hit</dd>
+          <dt>Place</dt><dd>place the selected block; hold to eat food</dd>
+          <dt>Hotbar</dt><dd>tap to pick what you hold</dd>
+          <dt>Inv</dt><dd>your inventory (creative: every item)</dd>
+          <dt>Drop</dt><dd>throw one of what you hold</dd>
+          <dt>View</dt><dd>first / third person</dd>
+          <dt>Chat</dt><dd>chat and /commands</dd>
+          <dt>Top left</dt><dd>tap for debug info</dd>
+        </dl>
+        <dl class="keys-only">
+          <dt>WASD</dt><dd>move</dd>
+          <dt>Space</dt><dd>jump</dd>
+          <dt>Space ×2</dt><dd>fly on/off in creative (Space up, Shift down)</dd>
+          <dt>W ×2 / Ctrl</dt><dd>sprint</dd>
+          <dt>Shift</dt><dd>sneak (won't fall off edges)</dd>
+          <dt>Hold left click</dt><dd>break (harder blocks take longer)</dd>
+          <dt>Left click a player or mob</dt><dd>punch (hit while falling for a critical)</dd>
+          <dt>Right click / F</dt><dd>place; hold to eat food (when hurt)</dd>
+          <dt>⌘/Alt + click</dt><dd>place (trackpad)</dd>
+          <dt>1–9 / wheel</dt><dd>pick hotbar slot</dd>
+          <dt>E</dt><dd>inventory (creative: every item)</dd>
+          <dt>Q / Ctrl+Q</dt><dd>throw one / the whole stack</dd>
+          <dt>F5 / V</dt><dd>first / third person view</dd>
+          <dt>G</dt><dd>shadows on/off</dd>
+          <dt>F3</dt><dd>debug info (frame rate, latency, position…)</dd>
+          <dt>Enter</dt><dd>chat</dd>
+          <dt>/</dt><dd>commands (/help, /gamemode, /summon gnome)</dd>
+          <dt>Esc</dt><dd>menu</dd>
+        </dl>
+        <button class="mc" data-go="main">Done</button>
+      </section>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

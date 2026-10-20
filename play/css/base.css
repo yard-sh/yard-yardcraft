@@ -1,0 +1,78 @@
+/* Page basics, and the stone-grey buttons used everywhere. */
+
+* {
+  box-sizing: border-box;
+}
+
+/* The hotbar slot size sets the HUD's scale: 50px on wide screens, smaller
+   so nine slots always fit across a phone. Safe-area insets keep the HUD
+   clear of notches and home indicators. */
+:root {
+  --slot: min(50px, calc((100vw - 32px - 40px) / 9));
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #8ec9ff;
+  font: 14px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: #fff;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#view {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  touch-action: none;
+}
+
+/* Stone-grey buttons with a bevel, Minecraft style. */
+button.mc {
+  touch-action: manipulation;
+  padding: 10px 12px;
+  border: 2px solid #000;
+  border-radius: 0;
+  background: #6f6f6f;
+  color: #e8e8e8;
+  font: inherit;
+  font-size: 15px;
+  text-shadow: 2px 2px 0 #3c3c3c;
+  box-shadow: inset 2px 2px 0 #a8a8a8, inset -2px -3px 0 #4a4a4a;
+  cursor: pointer;
+}
+button.mc:hover:not(:disabled) {
+  background: #7d8bb8;
+  box-shadow: inset 2px 2px 0 #b9c4e6, inset -2px -3px 0 #4f5b85;
+  color: #ffffa0;
+}
+button.mc.primary {
+  background: #4f8a34;
+  box-shadow: inset 2px 2px 0 #86c46a, inset -2px -3px 0 #2f5a1e;
+}
+button.mc.primary:hover:not(:disabled) {
+  background: #5fa23f;
+  box-shadow: inset 2px 2px 0 #9ad87c, inset -2px -3px 0 #356a22;
+}
+button.mc:disabled {
+  background: #3a3a3a;
+  color: #9a9a9a;
+  box-shadow: none;
+  cursor: wait;
+}
+button.mc.on {
+  background: #7d8bb8;
+  color: #ffffa0;
+  box-shadow: inset 2px 2px 0 #b9c4e6, inset -2px -3px 0 #4f5b85;
+}

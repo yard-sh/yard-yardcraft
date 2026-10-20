@@ -1,0 +1,242 @@
+/* The in-game display: crosshair, status, players, chat, hotbar, hearts,
+   the hurt flash and the death screen. */
+
+#crosshair {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+#crosshair::before,
+#crosshair::after {
+  content: "";
+  position: absolute;
+  background: #fff;
+}
+#crosshair::before {
+  left: 8px;
+  top: 0;
+  width: 2px;
+  height: 18px;
+}
+#crosshair::after {
+  top: 8px;
+  left: 0;
+  width: 18px;
+  height: 2px;
+}
+
+/* The top-left corner: a hint (or the connection state), and the debug
+   screen in its place when open. */
+#status {
+  position: fixed;
+  left: calc(12px + var(--safe-l));
+  top: calc(10px + var(--safe-t));
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+}
+#status[hidden],
+#debug[hidden] {
+  display: none;
+}
+#debug {
+  position: fixed;
+  left: calc(8px + var(--safe-l));
+  top: calc(8px + var(--safe-t));
+  z-index: 5;
+  max-width: calc(100vw - 16px);
+  font-size: 12px;
+  line-height: 1.25;
+  pointer-events: none;
+}
+#debug div {
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 1px;
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow-wrap: anywhere;
+}
+#debug b {
+  color: #ffe58a;
+  font-weight: normal;
+}
+
+#players {
+  position: fixed;
+  right: calc(12px + var(--safe-r));
+  top: calc(10px + var(--safe-t));
+  margin: 0;
+  padding: 6px 10px;
+  list-style: none;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  min-width: 140px;
+}
+#players li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0;
+}
+#players canvas {
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+  outline: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+#chat {
+  position: fixed;
+  left: calc(12px + var(--safe-l));
+  bottom: calc(var(--slot) + 70px + var(--safe-b));
+  width: min(460px, calc(100vw - 24px));
+}
+#log div {
+  padding: 2px 8px;
+  margin-top: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  transition: opacity 1s;
+  overflow-wrap: anywhere;
+}
+#log div.old {
+  opacity: 0;
+}
+#log div.sys {
+  color: #ffe58a;
+  white-space: pre-wrap;
+}
+#log div.err {
+  color: #ff9a8a;
+}
+#chat.open #log div.old {
+  opacity: 1;
+}
+#say-form {
+  margin: 0;
+}
+#say {
+  display: none;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font: inherit;
+  outline: none;
+}
+#chat.open #say {
+  display: block;
+}
+
+#hotbar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + var(--safe-b));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 6px;
+}
+#hotbar .slot {
+  width: var(--slot);
+  height: var(--slot);
+  border: 3px solid transparent;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.08);
+  background-size: 72%;
+  touch-action: manipulation;
+}
+#hotbar .slot.on {
+  border-color: #fff;
+}
+
+/* An inventory slot: a block icon and its count (here and in inventory.css). */
+.slot {
+  position: relative;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+}
+.slot .count {
+  position: absolute;
+  right: 3px;
+  bottom: 0;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #3f3f3f;
+  pointer-events: none;
+}
+
+#hearts {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--slot) + 28px + var(--safe-b));
+  transform: translateX(-50%);
+  width: calc(var(--slot) * 9 + 40px);
+  display: flex;
+  gap: 1px;
+  pointer-events: none;
+}
+#hearts[hidden] {
+  display: none;
+}
+#hearts i {
+  width: min(18px, calc(var(--slot) * 0.4));
+  height: min(18px, calc(var(--slot) * 0.4));
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+}
+
+/* A red flash at the edges of the screen when hurt. */
+#hurt {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 160px 40px rgba(200, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 0.45s ease-out;
+}
+#hurt.on {
+  opacity: 1;
+  transition: none;
+}
+
+#death {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(120, 0, 0, 0.45);
+  text-align: center;
+}
+#death[hidden] {
+  display: none;
+}
+#death h1 {
+  margin: 0;
+  font-size: clamp(32px, 7vw, 52px);
+  text-shadow: 3px 3px 0 #3c0000;
+}
+#death p {
+  margin: 0 0 8px;
+}
+#death .buttons {
+  width: min(400px, 100%);
+}

@@ -1,0 +1,80 @@
+/* The inventory screen: Minecraft's grey panel of slots. */
+
+#inventory {
+  --islot: min(46px, calc((100vw - 56px) / 9));
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  overflow-y: auto;
+  padding: calc(12px + var(--safe-t)) 12px calc(12px + var(--safe-b));
+  background: rgba(8, 12, 18, 0.55);
+}
+#inventory[hidden] {
+  display: none;
+}
+.inv-panel {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: #c6c6c6;
+  border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #555;
+  color: #3f3f3f;
+}
+.inv-panel h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: normal;
+}
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(9, var(--islot));
+  gap: 2px;
+}
+.inv-grid[hidden] {
+  display: none;
+}
+.inv-hotbar {
+  margin-top: 6px;
+}
+.inv-grid .slot {
+  width: var(--islot);
+  height: var(--islot);
+  background-color: #8b8b8b;
+  background-size: 70%;
+  box-shadow: inset 2px 2px 0 #373737, inset -2px -2px 0 #fff;
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.inv-grid .slot:hover {
+  background-color: #a5a5a5;
+}
+.inv-hint {
+  margin: 0;
+  max-width: calc(var(--islot) * 9 + 16px);
+  font-size: 11px;
+}
+.inv-panel .mc {
+  align-self: flex-end;
+  padding: 6px 16px;
+}
+
+/* The stack you're holding, following the pointer. */
+#inv-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--islot);
+  height: var(--islot);
+  margin: calc(var(--islot) / -2) 0 0 calc(var(--islot) / -2);
+  background-size: 70%;
+  pointer-events: none;
+  color: #fff;
+}
+#inv-cursor[hidden] {
+  display: none;
+}

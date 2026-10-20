@@ -1,0 +1,41 @@
+{
+  "version": 8,
+  "project_slug": "yardcraft",
+  "ignore_files": [],
+  "services": [
+    {
+      "dir": "play",
+      "name": "play",
+      "url": "/play",
+      "access": "public",
+      "rooms": [
+        {
+          "class": "World",
+          "binding": "WORLDS"
+        }
+      ],
+      "database_access": true
+    }
+  ],
+  "migrations": {
+    "dir": ".yard/migrations"
+  },
+  "pricing": {
+    "tiers": [
+      {
+        "key": "free",
+        "name": "Free",
+        "price_cents": 0,
+        "is_default": true,
+        "pricing_model": "one_time",
+        "description": "Free to play, in the browser",
+        "features": [
+          "Multiplayer worlds with chat",
+          "Survival and creative modes",
+          "Custom skins",
+          "Desktop and touch controls"
+        ]
+      }
+    ]
+  }
+}

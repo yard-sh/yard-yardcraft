@@ -1,0 +1,146 @@
+/* The touch controls, and the HUD rearranged around them. */
+
+body:not(.touch) .touch-only,
+body.touch .keys-only {
+  display: none;
+}
+
+#touch[hidden] {
+  display: none;
+}
+#touch button {
+  touch-action: none;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  background: rgba(20, 24, 30, 0.38);
+  color: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  font-size: 12px;
+  text-shadow: 0 1px 2px #000;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+#touch button.down,
+#touch button.on {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* The joystick shows where your thumb lands, anywhere on the left. */
+#stick-zone {
+  position: fixed;
+  left: 0;
+  top: 30%;
+  width: 42vw;
+  bottom: calc(var(--slot) + 52px + var(--safe-b));
+  touch-action: none;
+}
+#stick {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  margin: -64px 0 0 -64px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(20, 24, 30, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  left: calc(110px + var(--safe-l));
+  top: calc(100% - 90px);
+}
+#stick.on {
+  opacity: 1;
+}
+#knob {
+  position: absolute;
+  left: 34px;
+  top: 34px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.tb-top {
+  position: fixed;
+  top: calc(8px + var(--safe-t));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.tb-top button {
+  min-width: 52px;
+  height: 40px;
+  padding: 0 10px;
+}
+
+.tb-act {
+  position: fixed;
+  right: calc(12px + var(--safe-r));
+  bottom: calc(var(--slot) + 52px + var(--safe-b));
+  display: grid;
+  grid-template-columns: repeat(3, 60px);
+  grid-template-rows: 52px 72px;
+  gap: 8px;
+  grid-template-areas:
+    "sprint sneak place"
+    "drop jump break";
+}
+.tb-act [data-t="sprint"] { grid-area: sprint; }
+.tb-act [data-t="sneak"] { grid-area: sneak; }
+.tb-act [data-t="place"] { grid-area: place; }
+.tb-act [data-t="jump"] { grid-area: jump; }
+.tb-act [data-t="break"] { grid-area: break; }
+.tb-act [data-t="drop"] { grid-area: drop; }
+.tb-act button.big {
+  border-radius: 50%;
+  font-size: 13px;
+}
+
+/* While playing by touch, chat sits up top, out of the thumbs' way. */
+body.touch #chat {
+  top: calc(44px + var(--safe-t));
+  bottom: auto;
+  width: min(380px, calc(100vw - 24px));
+  font-size: 12px;
+}
+body.touch #players {
+  top: calc(56px + var(--safe-t));
+  font-size: 12px;
+  min-width: 0;
+}
+body.touch #status,
+body.touch #debug {
+  font-size: 11px;
+  pointer-events: auto;
+}
+body.touch #crosshair {
+  opacity: 0.8;
+}
+/* Short screens (phones held sideways): tighter controls. */
+@media (max-height: 480px) {
+  .tb-act {
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: 44px 62px;
+    gap: 6px;
+  }
+  body.touch #players {
+    display: none;
+  }
+}
+
+/* Narrow screens (phones held upright): the top buttons move right, clear of
+   the status line. */
+@media (max-width: 600px) {
+  .tb-top {
+    left: auto;
+    right: calc(10px + var(--safe-r));
+    transform: none;
+    gap: 6px;
+  }
+  .tb-top button {
+    min-width: 44px;
+    padding: 0 8px;
+  }
+}

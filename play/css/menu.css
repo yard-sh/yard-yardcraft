@@ -1,0 +1,251 @@
+/* The menu overlay and its screens. */
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
+  background: rgba(8, 12, 18, 0.6);
+}
+#overlay.hidden {
+  display: none;
+}
+.screen {
+  /* auto margins centre it, and still let a tall screen scroll from the top */
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(400px, 100%);
+  text-align: center;
+}
+.screen[hidden] {
+  display: none;
+}
+.screen.wide {
+  width: min(760px, 100%);
+}
+.logo {
+  margin: 0;
+  font-size: clamp(34px, 8vw, 56px);
+  letter-spacing: 4px;
+  color: #e8e8e8;
+  text-shadow: 3px 3px 0 #3c3c3c, 6px 6px 0 rgba(0, 0, 0, 0.35);
+}
+.screen h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  text-shadow: 2px 2px 0 #3c3c3c;
+}
+.sub {
+  margin: 0 0 8px;
+  color: #ffe58a;
+  text-shadow: 1px 1px 0 #3f3a20;
+}
+.foot {
+  margin: 4px 0 0;
+  color: #b8c4cf;
+  font-size: 12px;
+}
+.foot a,
+.note a {
+  color: #ffe58a;
+}
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Character screen */
+.char {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 14px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid #000;
+  box-shadow: inset 0 0 0 2px #555;
+  text-align: left;
+}
+.preview {
+  position: relative;
+  min-height: 300px;
+  background: radial-gradient(circle at 50% 40%, #4b6a86, #1e2a36 70%);
+  border: 2px solid #000;
+}
+#char-view {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+#char-view:active {
+  cursor: grabbing;
+}
+.hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  color: #b8c4cf;
+  pointer-events: none;
+}
+.char-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.field > span {
+  color: #b8c4cf;
+  font-size: 12px;
+}
+#char-name {
+  padding: 8px;
+  border: 2px solid #a0a0a0;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  outline: none;
+}
+#char-name:focus {
+  border-color: #fff;
+}
+#char-name.bad {
+  border-color: #ff6a5a;
+}
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.seg button.mc {
+  padding: 6px;
+  font-size: 13px;
+}
+.skins {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 6px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+.skins button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 2px 4px;
+  border: 2px solid #000;
+  background: #3a3a3a;
+  color: #ddd;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.skins button canvas {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+.skins button:hover {
+  background: #4c4c4c;
+}
+.skins button.on {
+  border-color: #fff;
+  background: #55618a;
+}
+.note {
+  margin: 0;
+  min-height: 2.8em;
+  font-size: 12px;
+  color: #b8c4cf;
+}
+.note.err {
+  color: #ff9a8a;
+}
+.note.ok {
+  color: #9be37a;
+}
+
+/* Options */
+.opts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.slider {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 2px solid #000;
+  background: #3a3a3a;
+  text-align: left;
+}
+.slider input {
+  width: 100%;
+  accent-color: #8fa0d8;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 14px;
+  text-align: left;
+  color: #b8c4cf;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid #000;
+}
+dt {
+  color: #fff;
+}
+dd {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .char {
+    grid-template-columns: 1fr;
+  }
+  .preview {
+    min-height: 220px;
+  }
+}
+
+/* Short screens (phones held sideways): a tighter menu. */
+@media (max-height: 480px) {
+  .preview {
+    min-height: 200px;
+  }
+  .logo {
+    font-size: 34px;
+  }
+  .screen {
+    gap: 6px;
+  }
+  button.mc {
+    padding: 7px 10px;
+  }
+}
