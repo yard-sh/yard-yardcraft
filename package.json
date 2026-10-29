@@ -3,13 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild server/index.js --bundle --format=esm --platform=neutral --outfile=play/_service.js --banner:js=\"// Generated from server/ by npm run build. Edit those files, not this one.\"",
-    "watch": "npm run build -- --watch",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "esbuild server/index.js --bundle --format=esm --platform=neutral --outfile=play/_service.js --banner:js=\"// Generated from server/ by npm run build. Edit those files, not this one.\"",
+    "build:client": "esbuild play/js/main.js play/css/index.css --bundle --minify --format=esm --target=es2020 --legal-comments=none --entry-names=[name] --outdir=play/dist",
+    "watch": "npm run build:server -- --watch & npm run build:client -- --watch",
     "dev": "npm run build && (npm run watch & yard dev)",
-    "check": "npm run build && esbuild play/js/main.js --bundle --format=esm --external:three --outfile=/dev/null --log-level=warning && yard service check",
+    "check": "npm run build && yard service check",
     "push": "npm run check && yard push"
   },
   "devDependencies": {
-    "esbuild": "^0.25.12"
+    "esbuild": "^0.25.12",
+    "three": "^0.160.0"
   }
 }

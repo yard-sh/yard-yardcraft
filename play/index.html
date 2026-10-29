@@ -7,14 +7,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#1e2a36" />
     <title>Yardcraft</title>
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/hud.css" />
-    <link rel="stylesheet" href="css/menu.css" />
-    <link rel="stylesheet" href="css/inventory.css" />
-    <link rel="stylesheet" href="css/touch.css" />
-    <script type="importmap">
-      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
-    </script>
+    <!-- Built by npm run build from css/ and js/ (three.js included): one
+         minified stylesheet and one script, so the game starts in two requests. -->
+    <link rel="stylesheet" href="dist/index.css" />
+    <script type="module" src="dist/main.js"></script>
   </head>
   <body>
     <canvas id="view"></canvas>
@@ -183,6 +179,5 @@
       </section>
     </div>
 
-    <script type="module" src="js/main.js"></script>
   </body>
 </html>

@@ -10,7 +10,7 @@
 import { SX, SY, SZ, MAX_HP } from "../play/js/shared/rules.js";
 import { loadProfile, forgetGuestProfile } from "./profiles.js";
 import { colorFor } from "./util.js";
-import { setupStorage, worldRecord, worldMessages } from "./edits.js";
+import { setupStorage, worldRecord, renewIfDue, worldMessages } from "./edits.js";
 import { setupInventories, stateOf, adoptGuest, inventoryMessages } from "./inventory.js";
 import { setupItems, itemMessages } from "./items.js";
 import { playerMessages, publicPlayer } from "./players.js";
@@ -39,6 +39,7 @@ export class World {
       return new Response("Expected a WebSocket", { status: 426 });
     }
 
+    await renewIfDue(this);
     const world = await worldRecord(this);
     const userId = request.headers.get("X-Yard-User-Id") ?? "";
     const email = request.headers.get("X-Yard-Email") ?? "";
@@ -97,6 +98,7 @@ export class World {
       size: [SX, SY, SZ],
       now: Date.now(),
       timeOffset: world.timeOffset,
+      resetAt: world.resetAt,
       players: others,
       mobs: allMobs(this),
       forgetGuest: signedInGuest,
@@ -121,8 +123,10 @@ export class World {
     await tickIfLate(this);
   }
 
-  // Mobs think on the room's alarm while anyone is here (mobs/index.js).
+  // Mobs think on the room's alarm while anyone is here (mobs/index.js), and
+  // it wakes the room when the world is due to reset (edits.js).
   async alarm() {
+    await renewIfDue(this);
     await mobTick(this);
   }
 

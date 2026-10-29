@@ -186,7 +186,7 @@ export async function mobTick(room) {
   } finally {
     // Even if something above failed, keep ticking.
     room.tickDue = Math.max(next, now + MIN_TICK_MS);
-    await room.ctx.storage.setAlarm(room.tickDue);
+    await room.ctx.storage.setAlarm(Math.min(room.tickDue, world.resetAt));
   }
 }
 

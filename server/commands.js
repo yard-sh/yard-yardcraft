@@ -96,8 +96,7 @@ const COMMANDS = {
           return room.reply(ws, "Usage: /restart [seed], with a whole number below 2147483648", true);
         }
       }
-      const world = await restartWorld(room, seed);
-      room.broadcast(null, { type: "reset", seed, gen: world.gen });
+      await restartWorld(room, seed);
       room.broadcast(null, { type: "system", text: `${player.name} restarted the world (seed ${seed})` });
     },
   },

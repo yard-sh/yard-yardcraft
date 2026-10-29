@@ -9,6 +9,9 @@ import { stateOf, saveState } from "./inventory.js";
 import { spawnItem, itemsIn, clearItems } from "./items.js";
 import { noticeEdit, clearMobs } from "./mobs/index.js";
 
+const RESET_MS = 10 * 60 * 1000;
+const resetAfter = (t) => (Math.floor(t / RESET_MS) + 1) * RESET_MS;
+
 export function setupStorage(room) {
   const sql = room.ctx.storage.sql;
   sql.exec("CREATE TABLE IF NOT EXISTS edits (cx INTEGER, cz INTEGER, x INTEGER, y INTEGER, z INTEGER, b INTEGER, PRIMARY KEY (x, y, z))");
@@ -24,9 +27,11 @@ export async function worldRecord(room) {
   if (!world) {
     storage.sql.exec("DROP TABLE IF EXISTS blocks");
     await storage.delete("seed");
-    world = { seed: Math.floor(Math.random() * 2 ** 31), gen: 1, timeOffset: 0 };
+    world = { seed: Math.floor(Math.random() * 2 ** 31), gen: 1, timeOffset: 0, resetAt: resetAfter(Date.now()) };
     await storage.put("world", world);
   }
+  // A world from before resets were scheduled is due at once.
+  world.resetAt ??= 0;
   return world;
 }
 
@@ -40,12 +45,21 @@ export async function restartWorld(room, seed) {
   const world = await worldRecord(room);
   world.seed = seed;
   world.gen += 1;
+  world.resetAt = resetAfter(Date.now());
   room.ctx.storage.sql.exec("DELETE FROM edits");
   clearItems(room);
   clearMobs(room);
   room.terrain = null;
   await saveWorldRecord(room, world);
+  room.broadcast(null, { type: "reset", seed, gen: world.gen, resetAt: world.resetAt });
   return world;
+}
+
+export async function renewIfDue(room) {
+  const world = await worldRecord(room);
+  if (Date.now() < world.resetAt) return;
+  await restartWorld(room, Math.floor(Math.random() * 2 ** 31));
+  room.broadcast(null, { type: "system", text: "The world has been reset. It resets every 10 minutes." });
 }
 
 export const worldMessages = {

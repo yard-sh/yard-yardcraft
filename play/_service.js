@@ -1093,7 +1093,6 @@ async function worldRecord(room) {
     world = { seed: Math.floor(Math.random() * 2 ** 31), gen: 1, timeOffset: 0, resetAt: resetAfter(Date.now()) };
     await storage.put("world", world);
   }
-  // A world from before resets were scheduled is due at once.
   world.resetAt ??= 0;
   return world;
 }
