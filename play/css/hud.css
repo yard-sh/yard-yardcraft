@@ -69,6 +69,34 @@
   font-weight: normal;
 }
 
+/* The countdown to the world's next reset, top centre, under the touch
+   buttons while they're showing. */
+#reset-timer {
+  position: fixed;
+  left: 50%;
+  top: calc(10px + var(--safe-t));
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 3px 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#reset-timer[hidden] {
+  display: none;
+}
+#reset-timer.soon {
+  color: #ffe58a;
+}
+#reset-timer.now {
+  color: #ff8a7a;
+}
+#touch:not([hidden]) ~ #reset-timer {
+  top: calc(56px + var(--safe-t));
+}
+
 #players {
   position: fixed;
   right: calc(12px + var(--safe-r));

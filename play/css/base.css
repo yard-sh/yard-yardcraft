@@ -30,6 +30,12 @@ body {
   overscroll-behavior: none;
 }
 
+/* An embed lets a scroll that reaches its edge move the page around it. */
+.embed,
+.embed body {
+  overscroll-behavior: auto;
+}
+
 #view {
   display: block;
   width: 100vw;

@@ -10,7 +10,7 @@
       "access": "public",
       "rooms": [
         {
-          "class": "World",
+          "type": "World",
           "binding": "WORLDS"
         }
       ],

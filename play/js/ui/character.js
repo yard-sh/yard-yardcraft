@@ -11,6 +11,7 @@ import { createPlayerModel } from "../skins/model.js";
 import { skinEntry, hasSkin, setSkin } from "../skins/cache.js";
 import { pixelTexture } from "../render/textures.js";
 import { $ } from "../core/dom.js";
+import { EMBED } from "../core/embed.js";
 import { send } from "../net.js";
 import { openMenu, menuScreen } from "./menu.js";
 
@@ -48,13 +49,15 @@ export function forgetGuest() {
   fetch("__yard/auth/guest", { method: "DELETE" }).catch(() => {});
 }
 
-// Yard's sign-in, coming back to the game.
+// Yard's sign-in, coming back to the game. An embed opens it in a new tab.
 function signInLink() {
   const a = document.createElement("a");
   a.href = "__yard/auth/login?return=/";
   a.textContent = "Sign in";
+  if (EMBED) a.target = "_blank";
   return a;
 }
+$("menu-guest").append("Playing as a guest · ", signInLink(), " to keep your character everywhere");
 
 function note(text, cls = "") {
   charMsg.textContent = text;

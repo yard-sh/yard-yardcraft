@@ -1031,7 +1031,7 @@ async function mobTick(room) {
     next = Math.min(next, room.spawnAt);
   } finally {
     room.tickDue = Math.max(next, now + MIN_TICK_MS);
-    await room.ctx.storage.setAlarm(room.tickDue);
+    await room.ctx.storage.setAlarm(Math.min(room.tickDue, world.resetAt));
   }
 }
 async function summonMobs(room, kind, n, at) {
@@ -1077,6 +1077,8 @@ var mobMessages = {
 };
 
 // server/edits.js
+var RESET_MS = 10 * 60 * 1e3;
+var resetAfter = (t) => (Math.floor(t / RESET_MS) + 1) * RESET_MS;
 function setupStorage(room) {
   const sql = room.ctx.storage.sql;
   sql.exec("CREATE TABLE IF NOT EXISTS edits (cx INTEGER, cz INTEGER, x INTEGER, y INTEGER, z INTEGER, b INTEGER, PRIMARY KEY (x, y, z))");
@@ -1088,9 +1090,11 @@ async function worldRecord(room) {
   if (!world) {
     storage.sql.exec("DROP TABLE IF EXISTS blocks");
     await storage.delete("seed");
-    world = { seed: Math.floor(Math.random() * 2 ** 31), gen: 1, timeOffset: 0 };
+    world = { seed: Math.floor(Math.random() * 2 ** 31), gen: 1, timeOffset: 0, resetAt: resetAfter(Date.now()) };
     await storage.put("world", world);
   }
+  // A world from before resets were scheduled is due at once.
+  world.resetAt ??= 0;
   return world;
 }
 async function saveWorldRecord(room, world) {
@@ -1100,12 +1104,20 @@ async function restartWorld(room, seed) {
   const world = await worldRecord(room);
   world.seed = seed;
   world.gen += 1;
+  world.resetAt = resetAfter(Date.now());
   room.ctx.storage.sql.exec("DELETE FROM edits");
   clearItems(room);
   clearMobs(room);
   room.terrain = null;
   await saveWorldRecord(room, world);
+  room.broadcast(null, { type: "reset", seed, gen: world.gen, resetAt: world.resetAt });
   return world;
+}
+async function renewIfDue(room) {
+  const world = await worldRecord(room);
+  if (Date.now() < world.resetAt) return;
+  await restartWorld(room, Math.floor(Math.random() * 2 ** 31));
+  room.broadcast(null, { type: "system", text: "The world has been reset. It resets every 10 minutes." });
 }
 var worldMessages = {
   // The edits and items in each chunk asked for, one message per chunk.
@@ -1285,8 +1297,7 @@ var COMMANDS = {
           return room.reply(ws, "Usage: /restart [seed], with a whole number below 2147483648", true);
         }
       }
-      const world = await restartWorld(room, seed);
-      room.broadcast(null, { type: "reset", seed, gen: world.gen });
+      await restartWorld(room, seed);
       room.broadcast(null, { type: "system", text: `${player.name} restarted the world (seed ${seed})` });
     }
   }
@@ -1326,6 +1337,7 @@ var World = class {
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Expected a WebSocket", { status: 426 });
     }
+    await renewIfDue(this);
     const world = await worldRecord(this);
     const userId = request.headers.get("X-Yard-User-Id") ?? "";
     const email = request.headers.get("X-Yard-Email") ?? "";
@@ -1375,6 +1387,7 @@ var World = class {
       size: [SX, SY, SZ],
       now: Date.now(),
       timeOffset: world.timeOffset,
+      resetAt: world.resetAt,
       players: others,
       mobs: allMobs(this),
       forgetGuest: signedInGuest
@@ -1396,8 +1409,10 @@ var World = class {
     if (player && handler) await handler(this, ws, player, msg);
     await tickIfLate(this);
   }
-  // Mobs think on the room's alarm while anyone is here (mobs/index.js).
+  // Mobs think on the room's alarm while anyone is here (mobs/index.js), and
+  // it wakes the room when the world is due to reset (edits.js).
   async alarm() {
+    await renewIfDue(this);
     await mobTick(this);
   }
   webSocketClose(ws) {

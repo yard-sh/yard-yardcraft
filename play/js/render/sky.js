@@ -16,7 +16,8 @@ import { paintClouds, pixelTexture, discTexture } from "./textures.js";
 // The server keeps the clock (and /time moves it), so every player sees the
 // same sky.
 let clockSkew = 0, timeOffset = 0;
-const worldNow = () => Date.now() + clockSkew + timeOffset;
+export const serverNow = () => Date.now() + clockSkew;
+const worldNow = () => serverNow() + timeOffset;
 
 export function syncClock(msg) {
   clockSkew = msg.now - Date.now();

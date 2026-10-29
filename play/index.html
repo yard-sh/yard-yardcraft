@@ -54,6 +54,7 @@
         <button data-t="break" class="big" aria-label="Break or hit">Break</button>
       </div>
     </div>
+    <div id="reset-timer" hidden></div>
 
     <!-- Inventory (E): the panel, and the stack following the pointer -->
     <div id="inventory" hidden>
@@ -89,9 +90,10 @@
             <button class="mc" data-go="options">Options</button>
             <button class="mc" data-go="controls">Controls</button>
           </div>
+          <button class="mc" id="open-tab" hidden>Open in new tab</button>
         </div>
         <p class="foot" id="menu-foot"></p>
-        <p class="foot" id="menu-guest" hidden>Playing as a guest · <a href="__yard/auth/login?return=/">Sign in</a> to keep your character everywhere</p>
+        <p class="foot" id="menu-guest" hidden></p>
       </section>
 
       <!-- Character: name, skin, arm model, with a live preview -->

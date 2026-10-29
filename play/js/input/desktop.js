@@ -6,6 +6,7 @@ import { chatOpen, openChat, closeChat } from "../ui/chat.js";
 import { menuOpen } from "../ui/menu.js";
 import { toggleDebug } from "../ui/debug.js";
 import { inventoryOpen } from "../ui/inventory.js";
+import { canvas } from "../render/renderer.js";
 import { locked, playing } from "./session.js";
 import { look, pressKey } from "./actions.js";
 
@@ -33,9 +34,18 @@ document.addEventListener("mouseup", (e) => {
 });
 document.addEventListener("contextmenu", (e) => e.preventDefault());
 
-document.addEventListener("wheel", (e) => {
-  if (locked()) selectSlot(selectedSlot() + Math.sign(e.deltaY));
-});
+// While playing the wheel only picks a slot: in an embed it would scroll the
+// page around the game too. On the canvas, which has the pointer while it's
+// locked, so the wheel over the menus never waits on this listener.
+canvas.addEventListener(
+  "wheel",
+  (e) => {
+    if (!locked()) return;
+    e.preventDefault();
+    selectSlot(selectedSlot() + Math.sign(e.deltaY));
+  },
+  { passive: false },
+);
 
 document.addEventListener("keydown", (e) => {
   if (inventoryOpen()) return; // it handles its own keys

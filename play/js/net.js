@@ -6,6 +6,7 @@ const url = new URL(`ws?world=${encodeURIComponent(worldName)}`, location.href);
 url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
 
 let ws = null;
+let retry = 0; // the reconnect waiting to run
 const handlers = new Map(); // type -> fn(msg)
 
 export function on(type, fn) {
@@ -36,6 +37,16 @@ export function connect(onDrop) {
   ws.onclose = () => {
     latency = null;
     onDrop();
-    setTimeout(() => connect(onDrop), 1000);
+    retry = setTimeout(() => connect(onDrop), 1000);
   };
+}
+
+// Leaves the world, with no reconnect until the next connect().
+export function disconnect() {
+  clearTimeout(retry);
+  if (!ws) return;
+  ws.onclose = null;
+  ws.close();
+  ws = null;
+  latency = null;
 }
