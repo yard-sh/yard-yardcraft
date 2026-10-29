@@ -2,9 +2,10 @@
 // top of its terrain, stored per chunk so clients fetch only the chunks
 // around them.
 import { SX, SY, SZ, CHUNK, CHUNKS_PER_REQUEST } from "../play/js/shared/rules.js";
-import { AIR, WATER, canSet } from "../play/js/world/blocks.js";
+import { AIR, WATER, DEF, canSet } from "../play/js/world/blocks.js";
+import { findSpawn } from "../play/js/world/terrain.js";
 import { dropOf, removeFrom, HOTBAR_SLOTS } from "../play/js/shared/inventory.js";
-import { blockAt } from "./terrain.js";
+import { blockAt, terrainReader } from "./terrain.js";
 import { stateOf, saveState } from "./inventory.js";
 import { spawnItem, itemsIn, clearItems } from "./items.js";
 import { noticeEdit, clearMobs } from "./mobs/index.js";
@@ -51,8 +52,28 @@ export async function restartWorld(room, seed) {
   clearMobs(room);
   room.terrain = null;
   await saveWorldRecord(room, world);
-  room.broadcast(null, { type: "reset", seed, gen: world.gen, resetAt: world.resetAt });
+  // Everyone here moves to the new spawn now, not when their client next
+  // sends a move (a background tab never does): their old spot is likely
+  // inside the new terrain, where others, mobs and joiners would see them.
+  const spawn = spawnPoint(room, seed);
+  for (const ws of room.ctx.getWebSockets()) {
+    const player = ws.deserializeAttachment();
+    if (!player) continue;
+    player.p = spawn;
+    ws.serializeAttachment(player);
+  }
+  room.broadcast(null, { type: "reset", seed, gen: world.gen, resetAt: world.resetAt, spawn });
   return world;
+}
+
+// Where a player spawns: the client's findSpawn column, standing on its top
+// solid block, as the client's finishSpawn places them.
+function spawnPoint(room, seed) {
+  const [x, z] = findSpawn(seed);
+  const r = terrainReader(room, seed);
+  let y = SY - 1;
+  while (y > 0 && !DEF[r.at(Math.floor(x), y - 1, Math.floor(z))].solid) y--;
+  return [x, y, z];
 }
 
 export async function renewIfDue(room) {

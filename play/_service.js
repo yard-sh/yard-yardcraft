@@ -189,6 +189,102 @@ def(WATER, "Water", [T.water, T.water, T.water], { opaque: false, solid: false, 
 var PLACEABLE = [GRASS, DIRT, STONE, SAND, LOG, LEAVES, PLANKS, BRICK, GLASS, LAMP];
 var canSet = (b) => b === AIR || PLACEABLE.includes(b);
 
+// play/js/core/noise.js
+function hash(seed, x, z) {
+  let h = (seed ^ Math.imul(x, 374761393) ^ Math.imul(z, 668265263)) >>> 0;
+  h = Math.imul(h ^ h >>> 13, 1274126177) >>> 0;
+  return ((h ^ h >>> 16) >>> 0) / 4294967296;
+}
+function valueNoise(seed, x, z, period = 0) {
+  const wrap = (v) => period ? (v % period + period) % period : v;
+  const x0 = Math.floor(x), z0 = Math.floor(z);
+  const fx = x - x0, fz = z - z0;
+  const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz);
+  const a = hash(seed, wrap(x0), wrap(z0)), b = hash(seed, wrap(x0 + 1), wrap(z0));
+  const c = hash(seed, wrap(x0), wrap(z0 + 1)), d = hash(seed, wrap(x0 + 1), wrap(z0 + 1));
+  return a + (b - a) * sx + (c - a) * sz + (a - b - c + d) * sx * sz;
+}
+
+// play/js/world/chunk.js
+var CHUNK_VOLUME = CHUNK * SY * CHUNK;
+var li = (x, y, z) => x + CHUNK * (z + CHUNK * y);
+var Chunk = class {
+  constructor(cx, cz) {
+    this.cx = cx;
+    this.cz = cz;
+    this.blocks = new Uint8Array(CHUNK_VOLUME);
+    this.sky = new Uint8Array(CHUNK_VOLUME);
+    this.blk = new Uint8Array(CHUNK_VOLUME);
+    this.requested = false;
+    this.ready = false;
+    this.lit = false;
+    this.meshed = false;
+  }
+};
+
+// play/js/world/terrain.js
+var SEA = 30;
+var smoothstep = (e0, e1, x) => {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
+};
+function heightAt(seed, x, z) {
+  const continent = valueNoise(seed + 3, x / 220, z / 220);
+  const ridge = 1 - Math.abs(valueNoise(seed + 4, x / 90, z / 90) * 2 - 1);
+  const detail = valueNoise(seed, x / 24, z / 24) * 0.6 + valueNoise(seed + 1, x / 10, z / 10) * 0.3 + valueNoise(seed + 2, x / 4, z / 4) * 0.1;
+  const h = 14 + continent * 26 + detail * 12 + ridge ** 3 * 42 * smoothstep(0.45, 0.75, continent);
+  return Math.max(2, Math.min(SY - 12, Math.floor(h)));
+}
+var surfaceOf = (h) => h >= 64 ? STONE : h <= SEA + 1 ? SAND : GRASS;
+var treeAt = (seed, x, z, h) => h > SEA + 1 && h < 62 && hash(seed + 7, x, z) < 0.012;
+function findSpawn(seed) {
+  const cx = SX / 2, cz = SZ / 2;
+  for (let r = 0; r < 512; r += 4)
+    for (let i = 0; i < Math.max(1, r * 2); i++) {
+      const a = i / Math.max(1, r * 2) * Math.PI * 2;
+      const x = Math.floor(cx + Math.cos(a) * r), z = Math.floor(cz + Math.sin(a) * r);
+      const h = heightAt(seed, x, z);
+      if (surfaceOf(h) === GRASS) return [x + 0.5, z + 0.5];
+    }
+  return [cx + 0.5, cz + 0.5];
+}
+function generate(c, seed) {
+  const M = 2, W = CHUNK + 2 * M;
+  const x0 = c.cx * CHUNK, z0 = c.cz * CHUNK;
+  const heights = new Int16Array(W * W);
+  for (let dz = -M; dz < CHUNK + M; dz++)
+    for (let dx = -M; dx < CHUNK + M; dx++) heights[dx + M + W * (dz + M)] = heightAt(seed, x0 + dx, z0 + dz);
+  const b = c.blocks;
+  for (let z = 0; z < CHUNK; z++)
+    for (let x = 0; x < CHUNK; x++) {
+      const h = heights[x + M + W * (z + M)];
+      const top = surfaceOf(h);
+      const under = top === GRASS ? DIRT : top;
+      for (let y = 0; y <= h; y++) b[li(x, y, z)] = y === h ? top : y > h - 4 ? under : STONE;
+      for (let y = h + 1; y <= SEA; y++) b[li(x, y, z)] = WATER;
+    }
+  const put = (x, y, z, id, force) => {
+    if (x < 0 || z < 0 || x >= CHUNK || z >= CHUNK || y < 0 || y >= SY) return;
+    const i = li(x, y, z);
+    if (force || b[i] === AIR) b[i] = id;
+  };
+  for (let dz = -M; dz < CHUNK + M; dz++)
+    for (let dx = -M; dx < CHUNK + M; dx++) {
+      const wx = x0 + dx, wz = z0 + dz;
+      const h = heights[dx + M + W * (dz + M)];
+      if (!treeAt(seed, wx, wz, h)) continue;
+      for (let y = h + 1; y <= h + 4; y++) put(dx, y, dz, LOG, true);
+      for (let dy = 3; dy <= 6; dy++) {
+        const r = dy >= 5 ? 1 : 2;
+        for (let ox = -r; ox <= r; ox++)
+          for (let oz = -r; oz <= r; oz++) {
+            if (r === 2 && Math.abs(ox) === 2 && Math.abs(oz) === 2 && hash(seed + dy, wx + ox, wz + oz) < 0.5) continue;
+            put(dx + ox, h + dy, dz + oz, LEAVES, false);
+          }
+      }
+    }
+}
+
 // play/js/shared/items.js
 var STRAWBERRY = 256;
 var ITEMS = {};
@@ -257,91 +353,6 @@ function clickSlot(inv, slot, button, shift) {
   inv.slots[slot] = c;
   inv.cursor = s;
   return true;
-}
-
-// play/js/world/chunk.js
-var CHUNK_VOLUME = CHUNK * SY * CHUNK;
-var li = (x, y, z) => x + CHUNK * (z + CHUNK * y);
-var Chunk = class {
-  constructor(cx, cz) {
-    this.cx = cx;
-    this.cz = cz;
-    this.blocks = new Uint8Array(CHUNK_VOLUME);
-    this.sky = new Uint8Array(CHUNK_VOLUME);
-    this.blk = new Uint8Array(CHUNK_VOLUME);
-    this.requested = false;
-    this.ready = false;
-    this.lit = false;
-    this.meshed = false;
-  }
-};
-
-// play/js/core/noise.js
-function hash(seed, x, z) {
-  let h = (seed ^ Math.imul(x, 374761393) ^ Math.imul(z, 668265263)) >>> 0;
-  h = Math.imul(h ^ h >>> 13, 1274126177) >>> 0;
-  return ((h ^ h >>> 16) >>> 0) / 4294967296;
-}
-function valueNoise(seed, x, z, period = 0) {
-  const wrap = (v) => period ? (v % period + period) % period : v;
-  const x0 = Math.floor(x), z0 = Math.floor(z);
-  const fx = x - x0, fz = z - z0;
-  const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz);
-  const a = hash(seed, wrap(x0), wrap(z0)), b = hash(seed, wrap(x0 + 1), wrap(z0));
-  const c = hash(seed, wrap(x0), wrap(z0 + 1)), d = hash(seed, wrap(x0 + 1), wrap(z0 + 1));
-  return a + (b - a) * sx + (c - a) * sz + (a - b - c + d) * sx * sz;
-}
-
-// play/js/world/terrain.js
-var SEA = 30;
-var smoothstep = (e0, e1, x) => {
-  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
-  return t * t * (3 - 2 * t);
-};
-function heightAt(seed, x, z) {
-  const continent = valueNoise(seed + 3, x / 220, z / 220);
-  const ridge = 1 - Math.abs(valueNoise(seed + 4, x / 90, z / 90) * 2 - 1);
-  const detail = valueNoise(seed, x / 24, z / 24) * 0.6 + valueNoise(seed + 1, x / 10, z / 10) * 0.3 + valueNoise(seed + 2, x / 4, z / 4) * 0.1;
-  const h = 14 + continent * 26 + detail * 12 + ridge ** 3 * 42 * smoothstep(0.45, 0.75, continent);
-  return Math.max(2, Math.min(SY - 12, Math.floor(h)));
-}
-var surfaceOf = (h) => h >= 64 ? STONE : h <= SEA + 1 ? SAND : GRASS;
-var treeAt = (seed, x, z, h) => h > SEA + 1 && h < 62 && hash(seed + 7, x, z) < 0.012;
-function generate(c, seed) {
-  const M = 2, W = CHUNK + 2 * M;
-  const x0 = c.cx * CHUNK, z0 = c.cz * CHUNK;
-  const heights = new Int16Array(W * W);
-  for (let dz = -M; dz < CHUNK + M; dz++)
-    for (let dx = -M; dx < CHUNK + M; dx++) heights[dx + M + W * (dz + M)] = heightAt(seed, x0 + dx, z0 + dz);
-  const b = c.blocks;
-  for (let z = 0; z < CHUNK; z++)
-    for (let x = 0; x < CHUNK; x++) {
-      const h = heights[x + M + W * (z + M)];
-      const top = surfaceOf(h);
-      const under = top === GRASS ? DIRT : top;
-      for (let y = 0; y <= h; y++) b[li(x, y, z)] = y === h ? top : y > h - 4 ? under : STONE;
-      for (let y = h + 1; y <= SEA; y++) b[li(x, y, z)] = WATER;
-    }
-  const put = (x, y, z, id, force) => {
-    if (x < 0 || z < 0 || x >= CHUNK || z >= CHUNK || y < 0 || y >= SY) return;
-    const i = li(x, y, z);
-    if (force || b[i] === AIR) b[i] = id;
-  };
-  for (let dz = -M; dz < CHUNK + M; dz++)
-    for (let dx = -M; dx < CHUNK + M; dx++) {
-      const wx = x0 + dx, wz = z0 + dz;
-      const h = heights[dx + M + W * (dz + M)];
-      if (!treeAt(seed, wx, wz, h)) continue;
-      for (let y = h + 1; y <= h + 4; y++) put(dx, y, dz, LOG, true);
-      for (let dy = 3; dy <= 6; dy++) {
-        const r = dy >= 5 ? 1 : 2;
-        for (let ox = -r; ox <= r; ox++)
-          for (let oz = -r; oz <= r; oz++) {
-            if (r === 2 && Math.abs(ox) === 2 && Math.abs(oz) === 2 && hash(seed + dy, wx + ox, wz + oz) < 0.5) continue;
-            put(dx + ox, h + dy, dz + oz, LEAVES, false);
-          }
-      }
-    }
 }
 
 // server/terrain.js
@@ -1109,8 +1120,22 @@ async function restartWorld(room, seed) {
   clearMobs(room);
   room.terrain = null;
   await saveWorldRecord(room, world);
-  room.broadcast(null, { type: "reset", seed, gen: world.gen, resetAt: world.resetAt });
+  const spawn = spawnPoint(room, seed);
+  for (const ws of room.ctx.getWebSockets()) {
+    const player = ws.deserializeAttachment();
+    if (!player) continue;
+    player.p = spawn;
+    ws.serializeAttachment(player);
+  }
+  room.broadcast(null, { type: "reset", seed, gen: world.gen, resetAt: world.resetAt, spawn });
   return world;
+}
+function spawnPoint(room, seed) {
+  const [x, z] = findSpawn(seed);
+  const r = terrainReader(room, seed);
+  let y = SY - 1;
+  while (y > 0 && !DEF[r.at(Math.floor(x), y - 1, Math.floor(z))].solid) y--;
+  return [x, y, z];
 }
 async function renewIfDue(room) {
   const world = await worldRecord(room);

@@ -78,6 +78,16 @@ function removeOther(id) {
 }
 
 // Replaces everyone with the room's list (on connecting).
+// After a world reset, everyone is at the new spawn: jump them there rather
+// than leaving them in the old world's spot until they next move.
+export function moveOthersTo(p) {
+  for (const o of others.values()) {
+    o.target.fromArray(p);
+    o.model.root.position.copy(o.target);
+    o.last.copy(o.target);
+  }
+}
+
 export function setOthers(list) {
   for (const id of [...others.keys()]) removeOther(id);
   for (const p of list) addOther(p);

@@ -14,7 +14,7 @@ import { placeCamera } from "./game/camera.js";
 import { newWorld, streamChunks } from "./game/chunks.js";
 import { updateInteraction, isBreaking, isEating } from "./game/interact.js";
 import { resetHealth, regenTick } from "./game/health.js";
-import { setOthers, animateOthers } from "./entities/players.js";
+import { setOthers, moveOthersTo, animateOthers } from "./entities/players.js";
 import { buildSelf, animateSelf, handVisible } from "./entities/avatar.js";
 import { renderPlayers, renderHotbar } from "./ui/hud.js";
 import { setInventory, setMode } from "./game/inventory.js";
@@ -63,6 +63,7 @@ on("reset", (msg) => {
   setResetAt(msg.resetAt);
   newWorld(msg.seed, msg.gen);
   setMobs([]);
+  if (msg.spawn) moveOthersTo(msg.spawn);
   spawn();
 });
 
