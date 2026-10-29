@@ -2,11 +2,11 @@
 import { game, controls } from "../game/state.js";
 import { primaryDown, useDown, useUp, stopMining } from "../game/interact.js";
 import { selectSlot, selectedSlot } from "../game/inventory.js";
-import { chatOpen, openChat, closeChat } from "../ui/chat.js";
+import { chatOpen, openChat, closeChat, logLine } from "../ui/chat.js";
 import { menuOpen } from "../ui/menu.js";
 import { toggleDebug } from "../ui/debug.js";
 import { inventoryOpen } from "../ui/inventory.js";
-import { canvas } from "../render/renderer.js";
+import { canvas, captureFrame } from "../render/renderer.js";
 import { locked, playing } from "./session.js";
 import { look, pressKey } from "./actions.js";
 
@@ -59,6 +59,12 @@ document.addEventListener("keydown", (e) => {
     if (!e.repeat) toggleDebug();
     return;
   }
+  // F2 saves a screenshot of the world view to the browser's downloads.
+  if (e.code === "F2") {
+    e.preventDefault();
+    if (!e.repeat) screenshot();
+    return;
+  }
   // Enter opens chat; / opens it with a command started.
   if ((e.code === "Enter" || e.code === "Slash") && game.self && (playing() || !menuOpen())) {
     e.preventDefault();
@@ -73,6 +79,20 @@ document.addEventListener("keyup", (e) => {
   controls.keys.delete(e.code);
   if (e.code === "KeyF") useUp();
 });
+
+async function screenshot() {
+  const blob = await captureFrame();
+  if (!blob) return logLine("Couldn't take a screenshot.", "sys");
+  const pad = (n) => String(n).padStart(2, "0");
+  const d = new Date();
+  const name = `yardcraft-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}.${pad(d.getMinutes())}.${pad(d.getSeconds())}.png`;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  logLine(`Saved screenshot as ${name}`, "sys");
+}
 
 // F5 changes the view rather than reloading the page while playing.
 addEventListener("keydown", (e) => e.code === "F5" && playing() && e.preventDefault(), true);

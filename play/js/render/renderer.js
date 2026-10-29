@@ -43,12 +43,20 @@ resize();
 export function render(withHand) {
   renderer.info.reset();
   renderer.render(scene, camera);
-  if (!withHand) return;
-  renderer.autoClear = false;
-  renderer.clearDepth();
-  renderer.render(handScene, handCamera);
-  renderer.autoClear = true;
+  if (withHand) {
+    renderer.autoClear = false;
+    renderer.clearDepth();
+    renderer.render(handScene, handCamera);
+    renderer.autoClear = true;
+  }
+  // The canvas only holds the frame until the browser shows it, so a
+  // capture is read right after drawing.
+  for (const done of captures.splice(0)) canvas.toBlob(done, "image/png");
 }
+
+// The next frame drawn, as a PNG blob (null if the browser couldn't make one).
+const captures = [];
+export const captureFrame = () => new Promise((done) => captures.push(done));
 
 // ---------------------------------------------------------------- terrain
 
