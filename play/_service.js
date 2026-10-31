@@ -1382,8 +1382,8 @@ var World = class {
       ...profile,
       color: colorFor(userId || guest),
       // Members of the team that owns the project: Yard's edge sends
-      // X-Yard-Entitlement: owner for them, and clients can't forge it.
-      admin: request.headers.get("X-Yard-Entitlement") === "owner",
+      // X-Yard-Entitlement: team for them, and clients can't forge it.
+      admin: request.headers.get("X-Yard-Entitlement") === "team",
       p: [SX / 2, SY, SZ / 2],
       ry: 0,
       rx: 0,
